@@ -140,6 +140,9 @@ ngx_stream_nginxcraft_parse(ngx_stream_nginxcraft_ctx_t *ctx, ngx_buf_t *buf)
         return NGX_DECLINED;
     }
 
+    if (ctx->variables != NULL) {
+        ngx_pfree(ctx->pool, ctx->variables); // Free previous variables before allocating new ones
+    }
     ctx->variables = ngx_pnalloc(ctx->pool, sizeof(nginxcraft_var));
 
     if (ctx->variables == NULL) {
@@ -160,12 +163,18 @@ ngx_stream_nginxcraft_parse(ngx_stream_nginxcraft_ctx_t *ctx, ngx_buf_t *buf)
         return NGX_ERROR;
     }
 
+    if (vars->minecraft_port.data != NULL) {
+        ngx_pfree(ctx->pool, vars->minecraft_port.data); // Free previous port data if exists
+    }
     vars->minecraft_port.data = ngx_pnalloc(ctx->pool, 6);
 
     if (vars->minecraft_port.data == NULL) {
         return NGX_ERROR;
     }
 
+    if (vars->minecraft_version.data != NULL) {
+        ngx_pfree(ctx->pool, vars->minecraft_version.data); // Free previous version data if exists
+    }
     vars->minecraft_version.data = ngx_pnalloc(ctx->pool, 11);
 
     if (vars->minecraft_version.data == NULL) {

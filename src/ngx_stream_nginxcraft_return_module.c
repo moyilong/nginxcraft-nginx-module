@@ -49,6 +49,9 @@ ngx_stream_return_handler(ngx_stream_session_t *s)
     }
 
     ctx = ngx_pcalloc(c->pool, sizeof(ngx_stream_nginxcraft_ctx_t));
+    if (ctx != NULL) {
+        ctx->variables = NULL; // Initialize to prevent stale data access
+    }
     if (ctx == NULL) {
         ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
         return;
@@ -72,6 +75,9 @@ ngx_stream_return_handler(ngx_stream_session_t *s)
     b->last = minecraft_str.data + minecraft_str.len;
     b->last_buf = 1;
 
+    if (ctx->out != NULL) {
+        ngx_free_chain(c->pool, ctx->out); // Free previous chain link to avoid memory leaks
+    }
     ctx->out = ngx_alloc_chain_link(c->pool);
     if (ctx->out == NULL) {
         ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
@@ -110,7 +116,10 @@ ngx_stream_return_write_handler(ngx_event_t *ev)
         return;
     }
 
-    ctx->out = NULL;
+    if (ctx->out != NULL) {
+        ngx_free_chain(c->pool, ctx->out); // Ensure any lingering data is cleared
+        ctx->out = NULL;
+    }
 
     if (!c->buffered) {
         ngx_log_debug0(NGX_LOG_DEBUG_STREAM, c->log, 0,

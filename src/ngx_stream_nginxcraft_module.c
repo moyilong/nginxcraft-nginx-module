@@ -118,12 +118,16 @@ ngx_stream_nginxcraft_handler(ngx_stream_session_t *s)
 
     if (ctx == NULL) {
         ctx = ngx_pcalloc(c->pool, sizeof(ngx_stream_nginxcraft_ctx_t));
+        if (ctx != NULL) {
+            ctx->variables = NULL; // Initialize variables to avoid stale data
+        }
 
         if (ctx == NULL) {
             return NGX_ERROR;
         }
 
         ctx->pool = c->pool;
+        ctx->variables = NULL; // Initialize variables to avoid reusing old data
         ctx->log = c->log;
         ngx_stream_set_ctx(s, ctx, ngx_stream_nginxcraft_module);
     }
@@ -211,7 +215,7 @@ ngx_stream_servername_host_variable(ngx_stream_session_t *s,
     v->no_cacheable = 0;
     v->not_found = 0;
 
-    if (ctx == NULL || ctx->host.len == 0) {
+    if (ctx == NULL || ctx->host.len == 0 || ctx->variables == NULL) {
         v->len = 0;
         v->data = NULL;
         return NGX_OK;
